@@ -10,7 +10,7 @@ from pygments.lexers import JsonLexer#高亮
 from pygments.formatters import TerminalFormatter#高亮
 from colorama import init, Fore, Back, Style#高亮
 
-lingpai='0f2de7ac66727cd9fcec1ee43559c561f6abf3f1e202c5a388d1c'#bot的token
+lingpai='0f2de7ac66727cd9fcec1ee11a18ad1ff314388d1c'#bot的token
 bot_id='448828939389894656'#bot的id
 websocket_url='wss://gateway-bot.fanbook.mobi/websocket'#websocket主机
 requests_url='https://a1.fanbook.mobi/api/bot/'#fb bot api主机
@@ -52,7 +52,7 @@ def colorize_json(smg2,pcolor=''):#格式化并高亮json字符串
     except json.JSONDecodeError as e:#如果解析失败，则直接输出原始字符串
         print(json_data)
 
-def send_data_to_fb(chatid=int,biaoti=str,ik=list,text=str) -> str:#发送数据
+def send_data_to_fb(chatid=0,biaoti="标题",ik=[],text='文本',type="card") -> str:#发送数据
     """
     发送消息
     Args:
@@ -60,6 +60,8 @@ def send_data_to_fb(chatid=int,biaoti=str,ik=list,text=str) -> str:#发送数据
         biaoti (str): 标题
         ik (list): 键盘列表
         text (str): 正文文本
+        type (str): 类型，card(消息卡片)或text(文本)
+        
     Returns:
         str: 返回json字符串
     """
@@ -68,10 +70,16 @@ def send_data_to_fb(chatid=int,biaoti=str,ik=list,text=str) -> str:#发送数据
     else:
         color='FF6100'
     url = f"https://a1.fanbook.mobi/api/bot/{lingpai}/sendMessage"
+    if type=="card":
+        text1="{\"width\":null,\"height\":null,\"data\":\"{\\\"tag\\\":\\\"column\\\",\\\"children\\\":[{\\\"tag\\\":\\\"container\\\",\\\"padding\\\":\\\"12,7\\\",\\\"child\\\":{\\\"tag\\\":\\\"text\\\",\\\"data\\\":\\\""+biaoti+"\\\",\\\"style\\\":{\\\"color\\\":\\\""+color+"\\\",\\\"fontSize\\\":16,\\\"fontWeight\\\":\\\"medium\\\"}},\\\"backgroundColor\\\":\\\"ddeeff\\\"},{\\\"tag\\\":\\\"container\\\",\\\"child\\\":{\\\"tag\\\":\\\"column\\\",\\\"padding\\\":\\\"12\\\",\\\"children\\\":[{\\\"tag\\\":\\\"container\\\",\\\"padding\\\":\\\"0,8,0,0\\\",\\\"child\\\":{\\\"tag\\\":\\\"markdown\\\",\\\"data\\\":\\\""+text+"\\\"}}]},\\\"backgroundColor\\\":\\\"ffffff\\\"}],\\\"crossAxisAlignment\\\":\\\"stretch\\\"}\",\"notification\":null,\"come_from_icon\":null,\"come_from_name\":null,\"template\":null,\"no_seat_toast\":null,\"type\":\"messageCard\"}"
+        pm="Fanbook"
+    else:
+        text1=text
+        pm=None
     payload = json.dumps({
     "chat_id": int(chatid),
-    "text": "{\"width\":null,\"height\":null,\"data\":\"{\\\"tag\\\":\\\"column\\\",\\\"children\\\":[{\\\"tag\\\":\\\"container\\\",\\\"padding\\\":\\\"12,7\\\",\\\"child\\\":{\\\"tag\\\":\\\"text\\\",\\\"data\\\":\\\""+biaoti+"\\\",\\\"style\\\":{\\\"color\\\":\\\""+color+"\\\",\\\"fontSize\\\":16,\\\"fontWeight\\\":\\\"medium\\\"}},\\\"backgroundColor\\\":\\\"ddeeff\\\"},{\\\"tag\\\":\\\"container\\\",\\\"child\\\":{\\\"tag\\\":\\\"column\\\",\\\"padding\\\":\\\"12\\\",\\\"children\\\":[{\\\"tag\\\":\\\"container\\\",\\\"padding\\\":\\\"0,8,0,0\\\",\\\"child\\\":{\\\"tag\\\":\\\"markdown\\\",\\\"data\\\":\\\""+text+"\\\"}}]},\\\"backgroundColor\\\":\\\"ffffff\\\"}],\\\"crossAxisAlignment\\\":\\\"stretch\\\"}\",\"notification\":null,\"come_from_icon\":null,\"come_from_name\":null,\"template\":null,\"no_seat_toast\":null,\"type\":\"messageCard\"}",
-    "parse_mode": "Fanbook",
+    "text": text1,
+    "parse_mode": pm,
     "reply_markup": {
         "inline_keyboard": [ik]
     }
@@ -83,9 +91,9 @@ def send_data_to_fb(chatid=int,biaoti=str,ik=list,text=str) -> str:#发送数据
     print(response.text)
     
     
-def edit_data_to_fb(chatid=int,biaoti=str,ik=list,text=str,messageid=int) -> str:#发送数据
+def edit_data_to_fb(chatid:int,biaoti:str,ik:list,text:str,messageid:int) -> str:#发送数据
     """
-    发送消息
+    修改消息
     Args:
         chatid (int): 频道id
         biaoti (str): 标题
@@ -115,11 +123,31 @@ def edit_data_to_fb(chatid=int,biaoti=str,ik=list,text=str,messageid=int) -> str
     response = requests.request("POST", url, headers=headers, data=payload)
     print(response.text)
     
-def get_data(word=str,range=int):
+def get_data(word:str,range:int) ->dict:
+    """通过qq音乐获取
+
+    Args:
+        word (str): 关键词
+        range (str): 页面
+
+    Returns:
+        dict: 返回json转化的字典
+    """
     data=requests.get(url=f'https://api.lolimi.cn/API/yiny/?word={word}&n={range}')
     return json.loads(data.text)
 
-def answerCallback(callback_id=str,text='ok',userid=str,channelid=str) ->str:
+def answerCallback(callback_id:str,text='ok',userid:str='1234',channelid:str='1234') ->str:
+    """结束键盘按钮加载态
+
+    Args:
+        callback_id (str, 响应id): _description_. Defaults to str.
+        text (str, 提示文本): _description_. Defaults to 'ok'.
+        userid (str, 用户id): _description_. Defaults to str.
+        channelid (str, 频道id): _description_. Defaults to str.
+
+    Returns:
+        str: 返回的json字符串
+    """
     url = f"https://a1.fanbook.mobi/api/bot/{lingpai}/v2/answerCallback"
 
     payload = json.dumps({
@@ -136,6 +164,23 @@ def answerCallback(callback_id=str,text='ok',userid=str,channelid=str) ->str:
 
     print(response.text)
 
+def get_data_for_wyy(word:str,range:int) ->dict:
+    """获取音乐在网易云
+
+    Args:
+        word (str): 关键词
+        range (str): 页面
+
+    Returns:
+        dict: 返回json转化的字典，失败为None
+    """
+    r=requests.get(url=f'https://api.lolimi.cn/API/wydg/api.php?msg={word}&n={range}')
+    try:
+        r=json.loads(r.text)
+        if r==6:r=None
+    except:r=None
+    return r
+    
 false=False
 def on_message(ws, message):#当收到消息
     # 处理接收到的消息
@@ -163,6 +208,30 @@ def on_message(ws, message):#当收到消息
                             durl='请稍后重试'
                         text=f'音乐名：{d["data"]["song"]}  \\\\n{d["data"]["subtitle"]}  \\\\n歌手/作者：{d["data"]["singer"]}  \\\\n专辑：{d["data"]["album"]}  \\\\nBPM：{d["data"]["bpm"]}  \\\\n音质：{d["data"]["quality"]}  \\\\n发行日期：{d['data']['time']}  \\\\n封面图链接：{d['data']['cover']}  \\\\n时长：{d['data']['interval']}  \\\\n大小：{d['data']['size']}  \\\\n比特率：{d['data']['kbps']}  \\\\n下载链接：{durl}  \\\\n第1页'
                         send_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='获取成功',ik=[{"text":"flac转mp3","url":"https://www.freeconvert.com/zh/flac-to-mp3"},{"text":"下一页","callback_data":"{\"type\":\"next\",\"index\":2,\"msg\":\""+msg[1]+"\"}"}],text=str(text))#发送消息
+                elif cmd=='/get2':
+                    d=get_data_for_wyy(word=msg[1],range=1)
+                    if d==None:
+                        text=f'查询失败，无结果'
+                        send_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='无结果',ik=[],text=str(text))#发送消息
+                    else:
+                        if d['code']==202 or d['code']==400:
+                            text=f'查询失败，无结果'
+                            send_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='无结果',ik=[],text=str(text))#发送消息
+                        else:
+                            durl=d["mp3"]
+                            if durl=='':
+                                durl='请稍后重试'
+                            try:
+                                review=d['review']
+                                txt=review['content'].split('\n')
+                                txt2=f'热评：  \\\\n**{review['nickname']}**  {review['timeStr']}  \\\\n'
+                                for i in txt:
+                                    txt2+=i+'  \\\\n'
+                            except:
+                                txt2=''
+                            text=f'音乐名：{d["name"]}  \\\\n歌手/作者：{d["author"]}  \\\\n时长：{d["market"]}  \\\\n封面图链接：{d['img']}  \\\\n下载链接：{durl}  \\\\n{txt2}  \\\\n第1页'
+                            send_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='获取成功',ik=[{"text":"下一页","callback_data":"{\"type\":\"next2\",\"index\":2,\"msg\":\""+msg[1]+"\"}"},{"text":"查看歌词","callback_data":"{\"type\":\"lyric2\",\"index\":1,\"msg\":\""+msg[1]+"\"}"}],text=str(text))#发送消息
+                    
     elif message["action"] =="miniPush":#键盘
         #tnnd反人类设计
         channelid=message['data']['channel_id']
@@ -199,11 +268,79 @@ def on_message(ws, message):#当收到消息
                     durl='请稍后重试'
                 text=f'音乐名：{d["data"]["song"]}  \\\\n{d["data"]["subtitle"]}  \\\\n歌手/作者：{d["data"]["singer"]}  \\\\n专辑：{d["data"]["album"]}  \\\\nBPM：{d["data"]["bpm"]}\\\\n音质：{d["data"]["quality"]}  \\\\n发行日期：{d['data']['time']}  \\\\n封面图链接：{d['data']['cover']}  \\\\n时长：{d['data']['interval']}  \\\\n大小：{d['data']['size']}  \\\\n比特率：{d['data']['kbps']}  \\\\n下载链接：{durl}  \\\\n第{idx}页'
                 edit_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='获取成功',ik=[{"text":"flac转mp3","url":"https://www.freeconvert.com/zh/flac-to-mp3"},{"text":"上一页","callback_data":"{\"type\":\"up\",\"index\":"+str(idx-1)+",\"msg\":\""+msg+"\"}"},{"text":"下一页","callback_data":"{\"type\":\"next\",\"index\":"+str(idx+1)+",\"msg\":\""+msg+"\"}"}],text=str(text),messageid=int(messageid))
+        if cmd['type'] =="next2":
+            idx=cmd['index']
+            d=get_data_for_wyy(word=msg,range=idx)
+            if d==None:
+                text=f'查询失败，无结果'
+                edit_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='无结果',ik=[],text=str(text),messageid=messageid)#发送消息
+            else:
+                if d['code']==202 or d['code']==400:
+                    text=f'查询失败，无结果'
+                    edit_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='无结果',ik=[],text=str(text),messageid=messageid)#发送消息
+                else:
+                    durl=d["mp3"]
+                    if durl=='':
+                        durl='请稍后重试'
+                    try:
+                        review=d['review']
+                        txt=review['content'].split('\n')
+                        txt2=f'热评：  \\\\n**{review['nickname']}**  {review['timeStr']}  \\\\n'
+                        for i in txt:
+                            txt2+=i+'  \\\\n'
+                    except:
+                        txt2=''
+                    text=f'音乐名：{d["name"]}  \\\\n歌手/作者：{d["author"]}  \\\\n时长：{d["market"]}  \\\\n封面图链接：{d['img']}  \\\\n下载链接：{durl}  \\\\n{txt2}  \\\\n第{idx}页'
+                    edit_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='获取成功',ik=[{"text":"上一页","callback_data":"{\"type\":\"up2\",\"index\":"+str(idx-1)+",\"msg\":\""+msg+"\"}"},{"text":"下一页","callback_data":"{\"type\":\"next2\",\"index\":"+str(idx+1)+",\"msg\":\""+msg+"\"}"},{"text":"查看歌词","callback_data":"{\"type\":\"lyric2\",\"index\":1,\"msg\":\""+msg+"\"}"}],text=str(text),messageid=messageid)
+        if cmd['type'] =="up2":
+            idx=cmd['index']
+            d=get_data_for_wyy(word=msg,range=idx)
+            if d==None:
+                text=f'查询失败，无结果'
+                edit_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='无结果',ik=[],text=str(text),messageid=messageid)
+            else:
+                if d['code']==202 or d['code']==400:
+                    text=f'查询失败，无结果'
+                    edit_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='无结果',ik=[],text=str(text),messageid=messageid)
+                else:
+                    durl=d["mp3"]
+                    if durl=='':
+                        durl='请稍后重试'
+                    try:
+                        review=d['review']
+                        txt=review['content'].split('\n')
+                        txt2=f'热评：  \\\\n**{review['nickname']}**  {review['timeStr']}  \\\\n'
+                        for i in txt:
+                            txt2+=i+'  \\\\n'
+                    except:
+                        txt2=''
+                    text=f'音乐名：{d["name"]}  \\\\n歌手/作者：{d["author"]}  \\\\n时长：{d["market"]}  \\\\n封面图链接：{d['img']}  \\\\n下载链接：{durl}  \\\\n{txt2}  \\\\n第{idx}页'
+                    edit_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='获取成功',ik=[{"text":"上一页","callback_data":"{\"type\":\"up2\",\"index\":"+str(idx-1)+",\"msg\":\""+msg+"\"}"},{"text":"下一页","callback_data":"{\"type\":\"next2\",\"index\":"+str(idx+1)+",\"msg\":\""+msg+"\"}"},{"text":"查看歌词","callback_data":"{\"type\":\"lyric2\",\"index\":1,\"msg\":\""+msg+"\"}"}],text=str(text),messageid=messageid)
+        if cmd['type'] =="lyric2":
+            idx=cmd['index']
+            d=get_data_for_wyy(word=msg,range=idx)
+            if d==None:
+                text=f'查询失败，无结果'
+                send_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='无结果',ik=[],text=str(text))
+            else:
+                if d['code']==202 or d['code']==400:
+                    text=f'查询失败，无结果'
+                    send_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='无结果',ik=[],text=str(text))
+                else:
+                    try:
+                        lyric=d['lyric']
+                        txt2=f''
+                        for i in lyric:
+                            txt2+="["+i['time']+']'+' '+i["name"]+'\n'
+                    except:
+                        txt2=''
+                    text=f'歌词列表：\n{txt2}'
+                    send_data_to_fb(chatid=int(message["data"]["channel_id"]),biaoti='获取成功',ik=[],text=str(text),type='text')
         answerCallback(callback_id=callback_id,userid=userid,channelid=channelid,text='获取完成')
+                
 def on_error(ws, error):
     # 处理错误
     #获取错误详细信息
-    import traceback
     traceback.print_exc()
     
     addmsg("发生错误:"+str(error),color='red')
@@ -255,4 +392,3 @@ if response.ok and data.get("ok"):
     ws.run_forever()
 else:
     addmsg("无法获取BOT基本信息，请检查令牌是否正确。",color='red')
-
